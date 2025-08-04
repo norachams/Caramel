@@ -1,0 +1,86 @@
+[
+  {
+    "email_id": "demo01",
+    "subject": "thank you for your application to Sika",
+    "classification": "Rejected",
+    "company": "Sika"
+  },
+  {
+    "email_id": "demo02",
+    "subject": "thank you for your application to Ericsson",
+    "classification": "Rejected",
+    "company": "Ericsson"
+  },
+  {
+    "email_id": "demo03",
+    "subject": "thank you for your interest in WebFX",
+    "classification": "Rejected",
+    "company": "Webfx"
+  },
+  {
+    "email_id": "demo04",
+    "subject": "thank you for applying to Hootsuite",
+    "classification": "Rejected",
+    "company": "Hootsuite"
+  },
+  {
+    "email_id": "demo05",
+    "subject": "interview invitation with Dayforce",
+    "classification": "Interview",
+    "company": "Dayforce"
+  },
+  {
+    "email_id": "demo06",
+    "subject": "your Intuit interview is scheduled",
+    "classification": "Interview",
+    "company": "Intuit"
+  },
+  {
+    "email_id": "demo07",
+    "subject": "thank you for your application to Amazon",
+    "classification": "Application Received",
+    "company": "Amazon"
+  },
+  {
+    "email_id": "demo08",
+    "subject": "thank you for your application to McKesson",
+    "classification": "Application Received",
+    "company": "Mckesson"
+  },
+  {
+    "email_id": "demo09",
+    "subject": "thank you for your application to Interac",
+    "classification": "Application Received",
+    "company": "Interac"
+  },
+  {
+    "email_id": "demo10",
+    "subject": "thank you for your application to Arctic Wolf",
+    "classification": "Application Received",
+    "company": "Arctic Wolf"
+  },
+  {
+    "email_id": "demo11",
+    "subject": "thank you for your application to Solink",
+    "classification": "Application Received",
+    "company": "Solink"
+  },
+  {
+    "email_id": "demo12",
+    "subject": "thank you for your application to Magnet Forensics",
+    "classification": "Application Received",
+    "company": "Magnet Forensics"
+  },
+  {
+    "email_id": "demo13",
+    "subject": "thank you for your application to Corpay",
+    "classification": "Application Received",
+    "company": "Corpay"
+  },
+  {
+    "email_id": "demo14",
+    "subject": "thank you for your application to Tenstorrent",
+    "classification": "Application Received",
+    "company": "Tenstorrent"
+  }
+]
