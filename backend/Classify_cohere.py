@@ -1,110 +1,149 @@
 import email.utils
 import json
 import os
-import re
-from typing import Dict, List, Optional
-
 import cohere
-from cohere import ClassifyExample
 from dotenv import load_dotenv
+import spacy
+
+
+
+nlp = spacy.load("en_core_web_sm")
 
 load_dotenv()
 
+_LABELS = {"application received", "interview", "rejected"}
 
-def extract_company(email_data):
-    """Best-effort company extraction from subject/body/sender."""
-    subject = (email_data.get('subject') or '').strip()
-    body = (email_data.get('body') or '').strip()
-    sender = (email_data.get('sender') or '').strip()
 
-    subject_patterns = [
-        r"application to\s+([^,–\|!]+)",
-        r"applying to\s+([^,–\|!]+)",
-        r"interview (?:with|invitation with)\s+([^,–\|!]+)",
-        r"thank you[, ]+(?:for your )?(?:application|interest|submission)[^–]*–\s*([^,–\|!]+)",
-        r"thank you for your application to\s+([^,–\|!]+)",
-    ]
-    for pattern in subject_patterns:
-        match = re.search(pattern, subject, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
+def extract_company(email_entry):
+    body = (email_entry.get('body') or '').strip()
+    subject = (email_entry.get('subject') or '').strip()
+    sender = (email_entry.get('sender') or '').strip()
 
-    body_patterns = [
-        r"thank you for (?:your|applying to)\s+([A-Z][A-Za-z& ]+)",
-        r"position (?:at|with)\s+([A-Z][A-Za-z& ]+)",
-        r"interview (?:with|at)\s+([A-Z][A-Za-z& ]+)",
-    ]
-    for pattern in body_patterns:
-        match = re.search(pattern, body, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
+    text = body or subject
+    if text:
+        doc = nlp(text)
+        for ent in doc.ents:
+            if ent.label_.upper() == 'ORG':
+                return ent.text.strip()
 
     _, addr = email.utils.parseaddr(sender)
     if '@' in addr:
         domain = addr.split('@', 1)[1].split('.', 1)[0]
         return domain.replace('-', ' ').title()
 
-    return "Unknown"
+    return 'Unknown'
+
+
+def _build_prompt(email_entry):
+    subject = email_entry.get('subject') or ''
+    sender = email_entry.get('sender') or ''
+    body = email_entry.get('body') or ''
+    return (
+        "You label job application emails into exactly one class from this set: "
+        "Application Received, Interview, Rejected.\n"
+        "Reply with only the class name, nothing else.\n"
+        f"Subject: {subject}\n"
+        f"Sender: {sender}\n"
+        "Body:\n"
+        f"{body}\n"
+    )
+
+
+def _fallback_label(email_entry):
+    text = ' '.join(
+        filter(None, [email_entry.get('subject'), email_entry.get('body')])
+    ).lower()
+
+    interview_cues = [
+        'interview',
+        'schedule a call',
+        'looking forward to speaking',
+        'invite you to interview',
+    ]
+    rejection_cues = [
+        'unfortunately',
+        'regret to inform',
+        'move forward with other candidates',
+        'not selected',
+        'will not be proceeding',
+    ]
+    received_cues = [
+        'thank you for your application',
+        'we have received your application',
+        'your application has been received',
+    ]
+
+    if any(phrase in text for phrase in interview_cues):
+        return 'Interview'
+    if any(phrase in text for phrase in rejection_cues):
+        return 'Rejected'
+    if any(phrase in text for phrase in received_cues):
+        return 'Application Received'
+
+    return 'Unknown'
+
+
+def _parse_label(raw_text, email_entry):
+    cleaned = (raw_text or '').strip().lower()
+    for label in _LABELS:
+        if label in cleaned:
+            return label.title()
+    fallback = _fallback_label(email_entry)
+    return fallback
 
 
 def classify_emails(emails):
     if not emails:
         return []
 
-    with open('backend/examples.json', 'r') as f:
-        examples_data = json.load(f)
-    examples = [ClassifyExample(text=example['text'], label=example['label']) for example in examples_data]
-
     inputs = [
         f"Email ID: {email.get('id')} Subject: {email.get('subject')} Sender: {email.get('sender')} Body: {email.get('body')}"
         for email in emails
     ]
-
-    # Persist raw inputs for debugging/inspection.
     with open('backend/inputs.json', 'w') as f:
         json.dump(inputs, f, indent=4)
 
     cohere_api_key = os.getenv('COHERE_API_KEY')
-    co = cohere.Client(cohere_api_key)
+    ft_model_id = os.getenv('FT_MODEL_ID')
+    if not cohere_api_key:
+        raise RuntimeError('COHERE_API_KEY not configured')
+    if not ft_model_id:
+        raise RuntimeError('FT_MODEL_ID not configured')
 
-    try:
-        response = co.classify(
-            model='embed-english-v2.0',
-            inputs=inputs,
-            examples=examples
-        )
-        print("Classification request successful. Processing response...")
+    client = cohere.Client(cohere_api_key)
 
-        cleaned_output: List[Dict[str, Optional[str]]] = []
-        for email_data, classification in zip(emails, response.classifications):
-            confidence: Optional[float] = None
-            if getattr(classification, 'confidence', None) is not None:
-                confidence = classification.confidence
-            elif getattr(classification, 'labels', None):
-                predicted = classification.prediction
-                label_info = classification.labels.get(predicted)
-                if isinstance(label_info, dict):
-                    confidence = label_info.get('confidence')
-                else:
-                    confidence = getattr(label_info, 'confidence', None)
+    cleaned_output = []
 
-            cleaned_output.append({
-                'email_id': email_data.get('id'),
-                'subject': email_data.get('subject'),
-                'classification': classification.prediction,
-                'confidence': confidence,
-                'company': extract_company(email_data)
-            })
+    for email_entry in emails:
+        prompt = _build_prompt(email_entry)
+        try:
+            generation = client.generate(
+                model=ft_model_id,
+                prompt=prompt,
+                max_tokens=16,
+                temperature=0.0,
+                stop_sequences=['\n']
+            )
+            raw_text = generation.generations[0].text if generation.generations else ''
+        except Exception as error:
+            print(f"Error during classification generate call: {error}")
+            raw_text = ''
 
-        with open('backend/cleaned_classifications.json', 'w') as f:
-            json.dump(cleaned_output, f, indent=4)
+        label = _parse_label(raw_text, email_entry)
 
-        print(cleaned_output)
-        return cleaned_output
+        cleaned_output.append({
+            'email_id': email_entry.get('id'),
+            'subject': email_entry.get('subject'),
+            'classification': label,
+            'confidence': None,
+            'company': extract_company(email_entry)
+        })
 
-    except Exception as e:
-        print(f"Error during classification: {e}")
-        return []
+    with open('backend/cleaned_classifications.json', 'w') as f:
+        json.dump(cleaned_output, f, indent=4)
+
+    print(cleaned_output)
+    return cleaned_output
 
 
 if __name__ == '__main__':
