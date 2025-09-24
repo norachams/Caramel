@@ -30,3 +30,6 @@ token.json
 token.pickle
 .token.pickle
 
+/backend/chat_cohere.py
+
+backend/chat_cohere.py

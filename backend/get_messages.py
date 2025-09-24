@@ -14,7 +14,7 @@ import json
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 
-def search_message(service, user_id, search_string,max_results=13):
+def search_message(service, user_id, search_string, max_results=13):
     """
     Search the inbox for emails using standard gmail search parameters
     and return a list of email IDs for each result
@@ -34,28 +34,29 @@ def search_message(service, user_id, search_string,max_results=13):
         list_ids = []
 
         # get the id of all messages that are in the search string
-        search_ids = service.users().messages().list(userId=user_id, q=search_string,maxResults=max_results).execute()
+        search_ids = service.users().messages().list(
+            userId=user_id,
+            q=search_string,
+            maxResults=max_results
+        ).execute()
         
         # if there were no results, print warning and return empty string
         try:
             ids = search_ids['messages']
 
         except KeyError:
-            print("WARNING: the search queried returned 0 results")
-            print("returning an empty string")
-            return ""
+            print("WARNING: the search query returned 0 results")
+            return []
 
-        if len(ids)>1:
-            for msg_id in ids:
-                list_ids.append(msg_id['id'])
-            return(list_ids)
+        for msg in ids:
+            if isinstance(msg, dict) and 'id' in msg:
+                list_ids.append(msg['id'])
 
-        else:
-            list_ids.append(ids['id'])
-            return list_ids
-        
-    except (errors.HttpError, error):
-        print("An error occured: %s" % error)
+        return list_ids
+
+    except errors.HttpError as error:
+        print(f"An error occurred during Gmail search: {error}")
+        return []
         
 
 

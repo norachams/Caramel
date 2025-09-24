@@ -9,6 +9,7 @@ interface Classification {
   subject: string; 
   classification: string;
   company: string; 
+  confidence?: number | null;
 }
 
 const Tracker: React.FC = () => {
@@ -69,7 +70,7 @@ const Tracker: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between mb-8">
           <div className="bg-white p-6 rounded-lg shadow-md mb-4 md:mb-0 md:mr-4">
             <h2 className="text-xl font-semibold mb-4">Last Updated:</h2>
-            <p className="text-gray-600">{lastUpdated}</p>
+            <p className="text-gray-600">{lastUpdated || 'Not updated yet'}</p>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-md md:ml-4 pr-32">
@@ -83,7 +84,7 @@ const Tracker: React.FC = () => {
                 <p className="text-blue-600">Submitted: {classifications.filter(c => c.classification === 'Application Received').length}</p>
                 <p className="text-red-600">Rejected: {classifications.filter(c => c.classification === 'Rejected').length}</p>
                 <p className="text-green-600">Interview: {classifications.filter(c => c.classification === 'Interview').length}</p>
-                <p className="text-gray-600">Total: {classifications.filter(c => c.classification).length}</p>
+                <p className="text-gray-600">Total: {classifications.length}</p>
               </>
             )}
           </div>
@@ -94,7 +95,7 @@ const Tracker: React.FC = () => {
             <div className="space-y-2">
               {classifications.filter(c => c.classification === 'Application Received').map(c => (
                 <div key={c.email_id} className="bg-gray-200 rounded-lg py-2 px-4">
-                  {c.company}
+                  {c.company || c.subject || 'Unknown company'}
                 </div>
               ))}
             </div>
@@ -104,7 +105,7 @@ const Tracker: React.FC = () => {
             <div className="space-y-2">
               {classifications.filter(c => c.classification === 'Rejected').map(c => (
                 <div key={c.email_id} className="bg-gray-200 rounded-lg py-2 px-4">
-                  {c.company}
+                  {c.company || c.subject || 'Unknown company'}
                 </div>
               ))}
             </div>
@@ -114,7 +115,7 @@ const Tracker: React.FC = () => {
             <div className="space-y-2">
               {classifications.filter(c => c.classification === 'Interview').map(c => (
                 <div key={c.email_id} className="bg-[#C2D8B9] rounded-lg py-2 px-4">
-                  {c.company}
+                  {c.company || c.subject || 'Unknown company'}
                 </div>
               ))}
             </div>
