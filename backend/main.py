@@ -15,6 +15,28 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 load_dotenv()
 
 
+from transformers import pipeline
+import json
+
+MODEL_PATH = "email-classifier"  
+
+def classify_emails(email_texts, model_path=MODEL_PATH):
+    classifier = pipeline("text-classification", model=model_path)
+    results = []
+
+    for i, text in enumerate(email_texts[:10]): 
+        prediction = classifier(text[:3000])[0]  
+        results.append({
+            "id": i + 1,
+            "predicted_label": prediction["label"],
+            "score": prediction["score"],
+            "text": text
+        })
+
+    with open("classified_emails.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+    print("\n✅ Classified emails saved to classified_emails.json")
+
 
 
 def main():
