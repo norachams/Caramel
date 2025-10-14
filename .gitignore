@@ -36,3 +36,8 @@ backend/chat_cohere.py
 venv/
 
 backend/email-classifier/
+
+backend/__pyache__/
+
+backend/__pycache__
+classified_emails.json

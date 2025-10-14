@@ -14,18 +14,24 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 load_dotenv()
 
-
 from transformers import pipeline
 import json
 
-MODEL_PATH = "email-classifier"  
+MODEL_PATH = "/Users/norach/Documents/Projects/job-tracker/backend/email-classifier"
+
 
 def classify_emails(email_texts, model_path=MODEL_PATH):
-    classifier = pipeline("text-classification", model=model_path)
+    classifier = pipeline(
+        "text-classification",
+        model=model_path,
+        tokenizer=model_path,
+        truncation=True,
+        max_length=512
+    )
     results = []
 
-    for i, text in enumerate(email_texts[:10]): 
-        prediction = classifier(text[:3000])[0]  
+    for i, text in enumerate(email_texts): 
+        prediction = classifier(text[:2000])[0]  
         results.append({
             "id": i + 1,
             "predicted_label": prediction["label"],
@@ -75,12 +81,18 @@ def main():
         )
         messages = results.get("messages", [])
 
+        email_bodies = []
       
         for message in messages:
 
             msg = service.users().messages().get(userId="me", id=message["id"], format="full").execute()
             body = extract_body(msg["payload"])
             print(f"Message ID: {message['id']}\n{body}\n")
+            email_bodies.append(body)
+
+            # classify the first 10 extracted emails
+            if email_bodies:
+                classify_emails(email_bodies)
 
             # msg = service.users().messages().get(userId="me", id=message["id"], format="full").execute()
             # payload = msg["payload"]
@@ -116,21 +128,3 @@ def extract_body(payload):
 
 if __name__ == "__main__":
     main()
-
-
-# import os
-# import requests
-
-# API_URL = "https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli"
-# headers = {
-#     "Authorization": f"Bearer {os.environ['HF_TOKEN']}",
-# }
-
-# def query(payload):
-#     response = requests.post(API_URL, headers=headers, json=payload)
-#     return response.json()
-
-# output = query({
-#     "inputs": "Hi, I recently bought a device from your company but it is not working as advertised and I would like to get reimbursed!",
-#     "parameters": {"candidate_labels": ["refund", "legal", "faq"]},
-# })
