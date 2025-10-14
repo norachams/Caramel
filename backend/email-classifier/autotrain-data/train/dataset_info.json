@@ -1,0 +1,23 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "autotrain_text": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "autotrain_label": {
+      "names": [
+        "Application Received",
+        "Interview",
+        "Not applicable",
+        "Offer",
+        "Online Assessment",
+        "Rejected"
+      ],
+      "_type": "ClassLabel"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

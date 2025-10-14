@@ -17,27 +17,27 @@ def index():
 
 @app.route('/tracker', methods=['GET'])
 def get_classifications():
-    try:
-        service = get_messages.get_service()
-        user_id = 'me'
-        search_string = 'subject:Thank you'
-        email_ids = get_messages.search_message(service, user_id, search_string)
-        emails = []
-        print("→ fetched email IDs:", email_ids)
-        for email_id in email_ids:
-            email_data = get_messages.get_messages(service, user_id, email_id)
-            if email_data:
-                emails.append(email_data)
-        print("→ built emails payload, count:", len(emails))
-        if not emails:
-            return jsonify([])
+    # try:
+    service = get_messages.get_service()
+    user_id = 'me'
+    search_string = 'subject:Thank you'
+    email_ids = get_messages.search_message(service, user_id, search_string)
+    emails = []
+    print("→ fetched email IDs:", email_ids)
+    for email_id in email_ids:
+        email_data = get_messages.get_messages(service, user_id, email_id)
+        if email_data:
+            emails.append(email_data)
+    print("→ built emails payload, count:", len(emails))
+    if not emails:
+        return jsonify([])
 
-        classifications = classify_emails(emails)
-        return jsonify(classifications)
-    except Exception as e:
-        traceback.print_exc()
-        app.logger.error("Error in /tracker", exc_info=e)
-        return jsonify({"error": str(e)}), 500
+    #     classifications = classify_emails(emails)
+    #     return jsonify(classifications)
+    # except Exception as e:
+    #     traceback.print_exc()
+    #     app.logger.error("Error in /tracker", exc_info=e)
+    #     return jsonify({"error": str(e)}), 500
 
 
 
