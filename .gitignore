@@ -34,3 +34,5 @@ token.pickle
 backend/chat_cohere.py
 
 venv/
+
+backend/email-classifier/
