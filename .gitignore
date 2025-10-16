@@ -41,3 +41,12 @@ backend/__pyache__/
 
 backend/__pycache__
 classified_emails.json
+classified_emails2.json
+classified_emails1.json
+
+backend/train.csv
+backend/valid.csv
+
+backend/config.yaml
+
+backend/old/
