@@ -1,10 +1,8 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
-import backend.old.get_messages as get_messages
-from backend.old.Classify_cohere import classify_emails
 import traceback
-from backend.main import main 
+from main import main 
 
 
 # The main Flask application that serves the API endpoints

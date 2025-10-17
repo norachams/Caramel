@@ -1,130 +1,183 @@
-import React, { useEffect, useState } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase';
+// src/pages/Tracker.tsx
+import { useEffect, useMemo, useState } from "react";
+import { Calendar, MoreVertical } from "lucide-react";
 
+type ApiItem = {
+  id: string;
+  company: string;
+  date: string;            
+  predicted_label: string; 
+  role?: string;
+};
 
-// main React component that fetches and displays the classified data on the frontend.
+type Status = "submitted" | "interview" | "oa" | "rejected";
 
-interface Classification {
-  email_id: string;
-  subject: string; 
-  classification: string;
-  company: string; 
-  confidence?: number | null;
+const LABEL_MAP: Record<string, Status> = {
+  applied: "submitted",
+  submitted: "submitted",
+    "application received": "submitted",
+  interview: "interview",
+  oa: "oa",
+  "online assessment": "oa",
+  rejected: "rejected",
+};
+
+const API_BASE = process.env.REACT_APP_API_URL ?? "http://localhost:5050";
+
+function toStatus(label?: string): Status | null {
+  if (!label) return null;
+  return LABEL_MAP[label.toLowerCase()] ?? null;
 }
 
-const Tracker: React.FC = () => {
-  // get the current authenticated user using Firebase authentication
-  const [user] = useAuthState(auth);
-  // state to store the fetched classifications data
-  const [classifications, setClassifications] = useState<Classification[]>([]);
-  // state to handle any errors during the fetch process
-  const [error, setError] = useState<string | null>(null);
-  // state to handle the loading state while data is being fetched
-  const [loading, setLoading] = useState<boolean>(true);
-  // state to store the last updated timestamp
-  const [lastUpdated, setLastUpdated] = useState<string>('');
+function Dot({ color }: { color: string }) {
+  return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />;
+}
 
-  useEffect(() => {
-    const fetchClassifications = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        
-        const apiServer = 'http://127.0.0.1:5050/tracker';
-        const response = await fetch(apiServer);
-
-        if (!response.ok) {
-          throw new Error(`HTTP Error. Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched Classifications:', data);
-        setClassifications(data || []);
-        // Set the last updated time
-        const now = new Date();
-        const formattedDate = now.toLocaleString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        });
-        setLastUpdated(formattedDate);
-      } catch (error) {
-        console.error('Error fetching classifications:', error);
-        setError('Error fetching classifications.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClassifications();
-  }, []);
-
+function Badge({ status }: { status: Status }) {
+  const style: Record<Status, string> = {
+    submitted: "bg-blue-100 text-blue-700",
+    interview: "bg-emerald-100 text-emerald-700",
+    oa: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    rejected: "bg-rose-100 text-rose-700",
+  };
+  const text: Record<Status, string> = {
+    submitted: "Submitted",
+    interview: "Interview",
+    oa: "OA",
+    rejected: "Rejected",
+  };
   return (
-    <div className="min-h-screen bg-[#FFFCF7] p-8">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Welcome, {user?.displayName || 'Guest'}</h1>
-        <div className="flex flex-col md:flex-row justify-between mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md mb-4 md:mb-0 md:mr-4">
-            <h2 className="text-xl font-semibold mb-4">Last Updated:</h2>
-            <p className="text-gray-600">{lastUpdated || 'Not updated yet'}</p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md md:ml-4 pr-32">
-            <h2 className="text-xl font-semibold mb-4">Stats</h2>
-            {loading ? (
-              <p>Loading classifications...</p>
-            ) : error ? (
-              <p>Error: {error}</p>
-            ) : (
-              <>
-                <p className="text-blue-600">Submitted: {classifications.filter(c => c.classification === 'Application Received').length}</p>
-                <p className="text-red-600">Rejected: {classifications.filter(c => c.classification === 'Rejected').length}</p>
-                <p className="text-green-600">Interview: {classifications.filter(c => c.classification === 'Interview').length}</p>
-                <p className="text-gray-600">Total: {classifications.length}</p>
-              </>
-            )}
-          </div>
+    <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-md ${style[status]}`}>
+      {text[status]}
+    </span>
+  );
+}
+
+function Card({ item, status }: { item: ApiItem; status: Status }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-[#FBFAF8] p-4 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-[15px] font-semibold text-gray-800">{item.company || "Unknown"}</h3>
+          <p className="text-sm text-gray-500">{item.role ?? "—"}</p>
         </div>
-        <div className="flex flex-col md:flex-row justify-between">
-          <div className="bg-white p-6 rounded-lg shadow-md mb-4 md:mb-0 md:mr-4 flex-1">
-            <h2 className="text-xl text-blue-600 font-semibold mb-4">Applications Submitted</h2>
-            <div className="space-y-2">
-              {classifications.filter(c => c.classification === 'Application Received').map(c => (
-                <div key={c.email_id} className="bg-gray-200 rounded-lg py-2 px-4">
-                  {c.company || c.subject || 'Unknown company'}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md mb-4 md:mb-0 md:ml-4 flex-1">
-            <h2 className="text-xl text-red-600 font-semibold mb-4">Rejected</h2>
-            <div className="space-y-2">
-              {classifications.filter(c => c.classification === 'Rejected').map(c => (
-                <div key={c.email_id} className="bg-gray-200 rounded-lg py-2 px-4">
-                  {c.company || c.subject || 'Unknown company'}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md md:ml-4 flex-1">
-            <h2 className="text-xl text-green-600 font-semibold mb-4">Interview</h2>
-            <div className="space-y-2">
-              {classifications.filter(c => c.classification === 'Interview').map(c => (
-                <div key={c.email_id} className="bg-[#C2D8B9] rounded-lg py-2 px-4">
-                  {c.company || c.subject || 'Unknown company'}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <button className="p-1 rounded-md text-gray-500 hover:bg-gray-100">
+          <MoreVertical size={16} />
+        </button>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+        <Calendar size={16} className="shrink-0" />
+        <span>{item.date}</span>
+      </div>
+
+      <div className="mt-3">
+        <Badge status={status} />
       </div>
     </div>
   );
-};
+}
 
-export default Tracker;
+function Column({
+  title,
+  dotColor,
+  items,
+  leftBorder = false,
+}: {
+  title: string;
+  dotColor: string;
+  items: ApiItem[];
+  leftBorder?: boolean;
+}) {
+  return (
+    <div className={`space-y-4 ${leftBorder ? "md:border-l md:border-gray-200 md:pl-6" : ""}`}>
+      {/* column header */}
+      <div className="flex items-center gap-2">
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${dotColor}`} />
+        <h2 className="text-[15px] font-semibold text-gray-800">
+          {title} <span className="text-gray-400 font-normal">({items.length})</span>
+        </h2>
+      </div>
+
+      {/* content */}
+      {items.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 flex items-center justify-center h-40">
+          No applications yet
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {items.map((it) => {
+            const s = toStatus(it.predicted_label) ?? "submitted";
+            return <Card key={it.id} item={it} status={s} />;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+export default function Tracker() {
+  const [data, setData] = useState<ApiItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/tracker`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = await r.json();
+        if (alive) setData(Array.isArray(json) ? json : []);
+      } catch (e: any) {
+        if (alive) setError(e?.message ?? "Failed to load");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const { submitted, interviewAndOA, rejected } = useMemo(() => {
+    const submitted: ApiItem[] = [];
+    const interviewAndOA: ApiItem[] = [];
+    const rejected: ApiItem[] = [];
+    for (const it of data) {
+      const s = toStatus(it.predicted_label);
+      if (s === "submitted") submitted.push(it);
+      else if (s === "interview" || s === "oa") interviewAndOA.push(it);
+      else if (s === "rejected") rejected.push(it);
+    }
+    return { submitted, interviewAndOA, rejected };
+  }, [data]);
+
+
+  return (
+    <div className="w-full">
+      {/* header always visible */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold text-gray-900">Job Tracker</h1>
+            <p className="text-gray-500">Track and manage your job applications</p>
+          </div>
+          {loading && <span className="text-sm text-gray-400">Loading…</span>}
+          
+        </div>
+        <button className="inline-flex items-center gap-2 rounded-lg bg-[#EB7C36] px-4 py-2 text-white hover:opacity-90">
+          <span className="text-lg leading-none">＋</span> Add Application
+        </button>
+      </div>
+
+      {/* columns always visible (with thin separators); cards render only if items exist) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Column title="Submitted Applications" dotColor="bg-blue-500" items={submitted} />
+        <Column title="Interviews & OA" dotColor="bg-emerald-500" items={interviewAndOA} leftBorder />
+        <Column title="Rejected" dotColor="bg-rose-500" items={rejected} leftBorder />
+      </div>
+    </div>
+  );
+}

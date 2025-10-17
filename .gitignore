@@ -52,3 +52,5 @@ backend/valid.csv
 backend/config.yaml
 
 backend/old/
+
+pages/tracker3.tsx

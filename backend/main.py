@@ -90,7 +90,7 @@ def main():
         # Save or print the final output
         # with open("classified_emails.json", "w", encoding="utf-8") as f:
         #     json.dump(email_data_list, f, ensure_ascii=False, indent=2)
-        # print("\n✅ Classified emails with company names saved to classified_emails.json")
+        # print("\n Classified emails with company names saved to classified_emails.json")
 
         return email_data_list  
         
