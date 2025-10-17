@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase';
 
+
 // main React component that fetches and displays the classified data on the frontend.
 
 interface Classification {
