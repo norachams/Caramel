@@ -1,9 +1,10 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
-import get_messages
-from Classify_cohere import classify_emails
+import backend.old.get_messages as get_messages
+from backend.old.Classify_cohere import classify_emails
 import traceback
+from backend.main import main 
 
 
 # The main Flask application that serves the API endpoints
@@ -13,31 +14,19 @@ CORS(app)
 
 @app.route('/')
 def index():
-    return "JobJourney Backend API"
+    return "Caramel Backend API"
 
 @app.route('/tracker', methods=['GET'])
 def get_classifications():
-    # try:
-    service = get_messages.get_service()
-    user_id = 'me'
-    search_string = 'subject:Thank you'
-    email_ids = get_messages.search_message(service, user_id, search_string)
-    emails = []
-    print("→ fetched email IDs:", email_ids)
-    for email_id in email_ids:
-        email_data = get_messages.get_messages(service, user_id, email_id)
-        if email_data:
-            emails.append(email_data)
-    print("→ built emails payload, count:", len(emails))
-    if not emails:
-        return jsonify([])
-
-    #     classifications = classify_emails(emails)
-    #     return jsonify(classifications)
-    # except Exception as e:
-    #     traceback.print_exc()
-    #     app.logger.error("Error in /tracker", exc_info=e)
-    #     return jsonify({"error": str(e)}), 500
+    try:
+        print("→ Fetching and classifying emails...")
+        data = main()  
+        print(f"→ {len(data)} emails processed.")
+        return jsonify(data)  
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    
 
 
 

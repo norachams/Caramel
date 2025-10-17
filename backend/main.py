@@ -7,6 +7,9 @@ from googleapiclient.errors import HttpError
 import base64
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+import spacy
+from datetime import datetime
+nlp = spacy.load("en_core_web_trf")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -18,31 +21,6 @@ from transformers import pipeline
 import json
 
 MODEL_PATH = "/Users/norach/Documents/Projects/job-tracker/backend/email-classifier"
-
-
-def classify_emails(email_texts, model_path=MODEL_PATH):
-    classifier = pipeline(
-        "text-classification",
-        model=model_path,
-        tokenizer=model_path,
-        truncation=True,
-        max_length=512
-    )
-    results = []
-
-    for i, text in enumerate(email_texts): 
-        prediction = classifier(text[:2000])[0]  
-        results.append({
-            "id": i + 1,
-            "predicted_label": prediction["label"],
-            "score": prediction["score"],
-            "text": text
-        })
-
-    with open("classified_emails.json", "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    print("\n✅ Classified emails saved to classified_emails.json")
-
 
 
 def main():
@@ -82,31 +60,68 @@ def main():
         )
         messages = results.get("messages", [])
 
-        email_bodies = []
-      
-        for message in messages:
+        email_data_list = []
 
+        for i, message in enumerate(messages):
             msg = service.users().messages().get(userId="me", id=message["id"], format="full").execute()
             body = extract_body(msg["payload"])
-            print(f"Message ID: {message['id']}\n{body}\n")
-            email_bodies.append(body)
+            company = get_company(body) or "Unknown"
+            print(f"\n📩 Email {i+1}: {company}\n{body[:200]}...\n")
+            date = get_email_date(msg)
 
-            # classify the first 10 extracted emails
-            if email_bodies:
-                classify_emails(email_bodies)
+            email_data_list.append({
+                "id": message["id"],
+                "body": body,
+                "company": company,
+                "date": date,
+            })
 
-            # msg = service.users().messages().get(userId="me", id=message["id"], format="full").execute()
-            # payload = msg["payload"]
-            # body_data = payload["parts"][0]["body"]["data"] if "parts" in payload else payload["body"]["data"]
-            # body = base64.urlsafe_b64decode(body_data).decode("utf-8")
-            # print(f"Message ID: {message['id']}\n{body}\n")
-            # # print(f' Subject: {msg["snippet"]}') 
+        # Now classify just the bodies
+        email_texts = [email["body"] for email in email_data_list]
+        classifications = classify_emails(email_texts)
 
+        # Merge the classification results back into each record
+        for i, classification in enumerate(classifications):
+            email_data_list[i].update({
+                "predicted_label": classification["predicted_label"],
+                "score": classification["score"]
+            })
+
+        # Save or print the final output
+        # with open("classified_emails.json", "w", encoding="utf-8") as f:
+        #     json.dump(email_data_list, f, ensure_ascii=False, indent=2)
+        # print("\n✅ Classified emails with company names saved to classified_emails.json")
+
+        return email_data_list  
+        
+        
     except HttpError as error:
         print(f"An error occurred: {error}")
 
-    
 
+
+def classify_emails(email_texts, model_path=MODEL_PATH):
+    classifier = pipeline(
+        "text-classification",
+        model=model_path,
+        tokenizer=model_path,
+        truncation=True,
+        max_length=512
+    )
+    results = []
+
+    for i, text in enumerate(email_texts): 
+        prediction = classifier(text[:2000])[0]  
+        results.append({
+            "id": i + 1,
+            "predicted_label": prediction["label"],
+            "score": prediction["score"],
+            "text": text
+        })
+
+    return results
+
+    
 def extract_body(payload):
     if "parts" in payload:
         for part in payload["parts"]:
@@ -126,6 +141,26 @@ def extract_body(payload):
 
 
 
+def get_company(email_text):
+    """Extracts company name from an email's text using Named Entity Recognition."""
+    doc = nlp(email_text)
+    for ent in doc.ents:
+        if ent.label_ == "ORG":  
+            return ent.text.strip()
+    return None
+
+def get_email_date(msg):
+    for header in msg["payload"].get("headers", []):
+        if header["name"].lower() == "date":
+            return header["value"]
+    if "internalDate" in msg:
+        ts = int(msg["internalDate"]) / 1000
+        return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+    return None
+
+
 
 if __name__ == "__main__":
     main()
+
+
