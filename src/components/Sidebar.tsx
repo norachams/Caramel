@@ -12,25 +12,26 @@ const navItems = [
 
 const Sidebar: React.FC = () => {
   return (
-    <aside className="w-64 h-screen bg-[#FBFAF8] border-r border-gray-200 flex flex-col">
+    <aside className="w-64 h-screen bg-[#f8f5ef] border-r border-gray-200 flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-2 p-6">
-        <div className="bg-[#EB7C36] p-2 rounded-lg">
-          <Briefcase size={20} color="white" />
+        <div className="p-2 rounded-lg">
+          {/* <Briefcase size={20} color="white" /> */}
+            <img src="/newlogo.png" alt="Your Logo" className="h-6 mx-auto"/>
         </div>
-        <h1 className="text-lg font-semibold text-gray-800">Caramel</h1>
+        <h1 className="text-lg font-semibold text-[#654236]">Caramel</h1>
       </div>
 
       {/* Section title */}
-      <p className="text-xs font-medium text-gray-500 px-6 mb-2">Job Hunt Tools</p>
+      <p className="text-xs font-medium text-[#826751] px-6 mb-2">Job Hunt Tools</p>
 
       {/* Nav links */}
       <nav className="flex flex-col">
         {navItems.map((item) => (
           <button
             key={item.name}
-            className={`flex items-center gap-3 px-6 py-2 text-sm text-gray-800 hover:bg-gray-100 transition rounded-md ${
-              item.active ? "bg-gray-100 font-medium" : ""
+            className={`flex items-center gap-3 px-6 py-2 text-sm text-[#654236] hover:bg-[#e9e4db] transition rounded-md ${
+              item.active ? "bg-[#e9e4db] font-medium" : ""
             }`}
           >
             {item.icon}

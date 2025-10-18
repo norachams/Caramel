@@ -11,7 +11,7 @@ function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="min-h-screen flex bg-[#FBFAF8] ">
+    <div className="min-h-screen flex bg-white ">
       <motion.aside
         className="overflow-hidden border-r border-gray-200 bg-white"
         initial={false}

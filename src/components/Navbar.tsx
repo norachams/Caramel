@@ -12,7 +12,7 @@ function Navbar({ onToggleSidebar }: NavbarProps) {
         className="p-2 rounded-md hover:bg-gray-100"
         aria-label="Toggle sidebar"
       >
-        <PanelLeft size={18} />
+        <PanelLeft size={18} className="text-[#654236]" />
       </button>
       <div />
     </header>

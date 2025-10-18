@@ -1,4 +1,3 @@
-// src/pages/Tracker.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, MoreVertical } from "lucide-react";
 
@@ -29,10 +28,6 @@ function toStatus(label?: string): Status | null {
   return LABEL_MAP[label.toLowerCase()] ?? null;
 }
 
-function Dot({ color }: { color: string }) {
-  return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color}`} />;
-}
-
 function Badge({ status }: { status: Status }) {
   const style: Record<Status, string> = {
     submitted: "bg-blue-100 text-blue-700",
@@ -55,7 +50,7 @@ function Badge({ status }: { status: Status }) {
 
 function Card({ item, status }: { item: ApiItem; status: Status }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-[#FBFAF8] p-4 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-[#fbf8fb] p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-[15px] font-semibold text-gray-800">{item.company || "Unknown"}</h3>
@@ -94,14 +89,14 @@ function Column({
       {/* column header */}
       <div className="flex items-center gap-2">
         <span className={`inline-block h-2.5 w-2.5 rounded-full ${dotColor}`} />
-        <h2 className="text-[15px] font-semibold text-gray-800">
-          {title} <span className="text-gray-400 font-normal">({items.length})</span>
+        <h2 className="text-[15px] font-semibold text-[#654236]">
+          {title} <span className="text-[#826751] font-normal">({items.length})</span>
         </h2>
       </div>
 
       {/* content */}
       {items.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 flex items-center justify-center h-40">
+        <div className="rounded-2xl border-2 border-dashed border-[#e5d9d1] text-[#826751] flex items-center justify-center h-40">
           No applications yet
         </div>
       ) : (
@@ -161,13 +156,13 @@ export default function Tracker() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Job Tracker</h1>
-            <p className="text-gray-500">Track and manage your job applications</p>
+            <h1 className="text-2xl font-semibold text-[#654236]">Job Tracker</h1>
+            <p className="text-[#826751]">Track and manage your job applications</p>
           </div>
           {loading && <span className="text-sm text-gray-400">Loading…</span>}
           
         </div>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-[#EB7C36] px-4 py-2 text-white hover:opacity-90">
+        <button className="inline-flex items-center gap-2 rounded-lg bg-[#DA7635] px-4 py-2 text-white hover:opacity-90">
           <span className="text-lg leading-none">＋</span> Add Application
         </button>
       </div>
